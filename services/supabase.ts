@@ -21,5 +21,5 @@ console.log(
 
 // PURE REST MODE – NO REALTIME, NO WEBSOCKETS
 export const supabase = isConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, { realtime: false as any })
   : null
