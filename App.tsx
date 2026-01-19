@@ -1,6 +1,7 @@
 
 import React, { useState, Suspense, lazy, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './components/AuthProvider';
+import { useUserProfile } from './components/UserProfileContext';
 
 // Lazy load components for code splitting
 const Layout = lazy(() => import('./components/Layout'));
@@ -20,6 +21,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 const AppContent: React.FC = () => {
   const { user, userId, profile, loading, logout } = useAuth();
+  const { profile: userProfile } = useUserProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [doctorMode, setDoctorMode] = useState<DoctorMode>('GP');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -74,13 +76,13 @@ const AppContent: React.FC = () => {
 
   // Fetch all data on login
   useEffect(() => {
-    if (!user || !userId) return;
+    if (!user || !userId || !userProfile) return;
     const fetchData = async () => {
       try {
         const [pats, exps, vists] = await Promise.all([
-          db.getPatients(userId, doctorMode),
-          db.getExpenses(userId, doctorMode),
-          db.getVisits(userId, doctorMode)
+          db.getPatients(userId, userProfile, doctorMode),
+          db.getExpenses(userId, userProfile, doctorMode),
+          db.getVisits(userId, userProfile, doctorMode)
         ]);
         setPatients(pats);
         setExpenses(exps);
@@ -90,7 +92,7 @@ const AppContent: React.FC = () => {
       }
     };
     fetchData();
-  }, [user, userId, doctorMode]);
+  }, [user, userId, userProfile, doctorMode]);
 
   // Compute dashboard stats
   const dashboardStats = useMemo(() => {
@@ -116,9 +118,9 @@ const AppContent: React.FC = () => {
   }, [visits, expenses, patients]);
 
   const refreshExpenses = async () => {
-    if (!userId) return;
+    if (!userId || !userProfile) return;
     try {
-      const exps = await db.getExpenses(userId, doctorMode);
+      const exps = await db.getExpenses(userId, userProfile, doctorMode);
       setExpenses(exps);
     } catch (error) {
       console.error('Failed to refresh expenses:', error);
@@ -226,7 +228,7 @@ const AppContent: React.FC = () => {
         setSelectedPatient(updatedData);
         toast.success('Patient updated successfully!');
       } else {
-        const newPatient = await db.createPatient(patientData);
+        const newPatient = await db.createPatient(patientData, userProfile);
         setSelectedPatient(newPatient);
         toast.success('Patient added successfully!');
       }

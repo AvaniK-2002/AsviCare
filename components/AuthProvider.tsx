@@ -3,6 +3,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { getAuthService } from '../services/authService';
 import type { UserProfile, Clinic } from '../types';
 import { supabase } from '../services/supabase';
+import { UserProfileProvider, useUserProfile } from './UserProfileContext';
 
 interface AuthContextType {
   user: User | null;
@@ -30,10 +31,10 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+const AuthProviderContent: React.FC<AuthProviderProps> = ({ children }) => {
+  const { profile: userProfile } = useUserProfile();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
   const [loading, setLoading] = useState(true);
   const [authService, setAuthService] = useState<any>(null);
@@ -42,26 +43,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getAuthService().then(setAuthService);
   }, []);
 
-  const fetchUserProfile = async (user: User) => {
+  const fetchClinic = async (clinicId: string) => {
     if (!supabase) return null;
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select(`
-        *,
-        clinics (*)
-      `)
-      .eq('auth_user_id', user.id)
+      .from('clinics')
+      .select('*')
+      .eq('id', clinicId)
       .single();
 
     if (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error fetching clinic:', error);
       return null;
     }
 
-    setProfile(data);
-    setClinic(data.clinics);
+    setClinic(data);
     return data;
   };
+
+  useEffect(() => {
+    if (userProfile?.clinic_id) {
+      fetchClinic(userProfile.clinic_id);
+    } else {
+      setClinic(null);
+    }
+  }, [userProfile]);
 
   useEffect(() => {
     if (!authService) return;
@@ -73,12 +78,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserProfile(session.user);
-        } else {
-          setProfile(null);
-          setClinic(null);
-        }
       }
       setLoading(false);
     });
@@ -87,12 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = authService.onAuthStateChange(async (_event: string, session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchUserProfile(session.user);
-      } else {
-        setProfile(null);
-        setClinic(null);
-      }
       setLoading(false);
     });
 
@@ -105,7 +98,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!error && user) {
       setUser(user);
       setSession(session);
-      await fetchUserProfile(user);
     }
     return { error };
   };
@@ -116,7 +108,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!error && user) {
       setUser(user);
       setSession(session);
-      await fetchUserProfile(user);
     }
     return { error };
   };
@@ -127,7 +118,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!error) {
       setUser(null);
       setSession(null);
-      setProfile(null);
       setClinic(null);
     }
     return { error };
@@ -137,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     userId: user?.id || null,
     session,
-    profile,
+    profile: userProfile as UserProfile | null, // Cast to match
     clinic,
     loading,
     login,
@@ -151,3 +141,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+const AuthWrapper: React.FC<AuthProviderProps> = ({ children }) => {
+  const [authService, setAuthService] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    getAuthService().then(setAuthService);
+  }, []);
+
+  useEffect(() => {
+    if (!authService) return;
+
+    // Get initial session
+    authService.getSession().then(async ({ session, error }: any) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      } else {
+        setIsAuthenticated(!!session?.user);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = authService.onAuthStateChange(async (_event: string, session: Session | null) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [authService]);
+
+  return (
+    <UserProfileProvider isAuthenticated={isAuthenticated}>
+      <AuthProviderContent>
+        {children}
+      </AuthProviderContent>
+    </UserProfileProvider>
+  );
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => (
+  <AuthWrapper>
+    {children}
+  </AuthWrapper>
+);

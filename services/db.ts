@@ -2,15 +2,16 @@
 import { Patient, Visit, Expense, DoctorMode, Appointment } from '../types';
 import { supabase } from './supabase';
 import { getAuthService } from './authService';
+import { globalUserProfile } from '../components/UserProfileContext';
 
 console.log('DB Service initialized with supabase:', !!supabase);
 
-// Cache for user profile to prevent multiple fetches
-let cachedProfile: { id: string; clinic_id: string; auth_user_id: string; role: string } | null = null;
-
 // Helper to get current user profile
 const getUserProfile = async (): Promise<{ id: string; clinic_id: string; auth_user_id: string; role: string } | null> => {
-  if (cachedProfile) return cachedProfile;
+  if (globalUserProfile) {
+    console.log('getUserProfile: Using cached profile');
+    return globalUserProfile;
+  }
   if (!supabase) {
     console.log('getUserProfile: Supabase not configured');
     return null;
@@ -32,7 +33,6 @@ const getUserProfile = async (): Promise<{ id: string; clinic_id: string; auth_u
     console.log('getUserProfile: Profile not found:', error);
     return null;
   }
-  cachedProfile = data;
   console.log('getUserProfile: Returning profile:', data);
   return data;
 };
@@ -44,8 +44,7 @@ const getUserId = async (): Promise<string | null> => {
 };
 
 export const db = {
-  createPatient: async (patient: Omit<Patient, 'id' | 'clinic_id' | 'user_id' | 'created_at'>): Promise<Patient> => {
-    const profile = await getUserProfile();
+  createPatient: async (patient: Omit<Patient, 'id' | 'clinic_id' | 'user_id' | 'created_at'>, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }): Promise<Patient> => {
     if (!profile) throw new Error('User not authenticated');
 
     const { data, error } = await supabase
@@ -61,8 +60,7 @@ export const db = {
     if (error) throw error;
     return data as Patient;
   },
-  getPatients: async (userId: string, mode?: DoctorMode): Promise<Patient[]> => {
-    const profile = await getUserProfile();
+  getPatients: async (userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }, mode?: DoctorMode): Promise<Patient[]> => {
     if (!profile) return [];
 
     let query = supabase
@@ -123,8 +121,7 @@ export const db = {
     if (error) throw error;
   },
 
-  getVisits: async (userId: string, mode?: DoctorMode): Promise<Visit[]> => {
-    const profile = await getUserProfile();
+  getVisits: async (userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }, mode?: DoctorMode): Promise<Visit[]> => {
     let query = supabase
       .from('visits')
       .select('*')
@@ -136,8 +133,7 @@ export const db = {
     if (error) throw error;
     return data || [];
   },
-  addVisit: async (visit: Omit<Visit, 'id' | 'created_at' | 'created_by'>, userId: string) => {
-    const profile = await getUserProfile();
+  addVisit: async (visit: Omit<Visit, 'id' | 'created_at' | 'created_by'>, userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }) => {
     if (!profile) throw new Error('User not authenticated');
 
     console.log('addVisit called with visit:', visit, 'userId:', userId);
@@ -167,15 +163,14 @@ export const db = {
   },
 
 
-  getPatientVisits: (patient_id: string, userId: string): Promise<Visit[]> => {
-    return db.getVisits(userId).then(visits =>
+  getPatientVisits: (patient_id: string, userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }): Promise<Visit[]> => {
+    return db.getVisits(userId, profile).then(visits =>
       visits.filter(v => v.patient_id === patient_id).sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )
     );
   },
-  createExpense: async (expense: Omit<Expense, 'id' | 'created_at' | 'created_by'>, userId: string): Promise<Expense> => {
-    const profile = await getUserProfile();
+  createExpense: async (expense: Omit<Expense, 'id' | 'created_at' | 'created_by'>, userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }): Promise<Expense> => {
     if (!profile) throw new Error('User not authenticated');
 
     const { data, error } = await supabase
@@ -189,8 +184,7 @@ export const db = {
     if (error) throw error;
     return data as Expense;
   },
-  getExpenses: async (userId: string, mode?: DoctorMode): Promise<Expense[]> => {
-    const profile = await getUserProfile();
+  getExpenses: async (userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string }, mode?: DoctorMode): Promise<Expense[]> => {
     let query = supabase
       .from('expenses')
       .select('*')

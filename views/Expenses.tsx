@@ -7,6 +7,7 @@ import { EXPENSE_CATEGORIES } from '../constants';
 import { ExpenseSchema, ExpenseFormData } from '../validations';
 import { format } from 'date-fns';
 import { useAuth } from '../components/AuthProvider';
+import { useUserProfile } from '../components/UserProfileContext';
 
 interface ExpensesProps {
   mode?: DoctorMode;
@@ -16,6 +17,7 @@ interface ExpensesProps {
 
 const Expenses: React.FC<ExpensesProps> = ({ mode, expenses, onRefreshExpenses }) => {
   const { userId, loading: authLoading } = useAuth();
+  const { profile: userProfile } = useUserProfile();
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [newExpense, setNewExpense] = useState<Partial<Expense>>({
@@ -78,7 +80,7 @@ const Expenses: React.FC<ExpensesProps> = ({ mode, expenses, onRefreshExpenses }
           note: newExpense.note || '',
           date: newExpense.date,
           doctortype: mode || 'GP'
-        }, userId);
+        }, userId, userProfile);
       }
       await onRefreshExpenses();
       setShowForm(false);

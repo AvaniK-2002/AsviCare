@@ -7,6 +7,7 @@ import { format, addDays, differenceInWeeks } from 'date-fns';
 import { FEE_PRESETS } from '../constants';
 import { VisitSchema, VisitFormData } from '../validations';
 import { useAuth } from '../components/AuthProvider';
+import { useUserProfile } from '../components/UserProfileContext';
 
 interface PatientProfileProps {
   patient: Patient;
@@ -18,6 +19,7 @@ interface PatientProfileProps {
 
 const PatientProfile: React.FC<PatientProfileProps> = ({ patient, mode, visits, onBack, onUpdatePatient }) => {
   const { userId, loading: authLoading } = useAuth();
+  const { profile: userProfile } = useUserProfile();
   const [showAddVisit, setShowAddVisit] = useState(false);
   const [visitMode, setVisitMode] = useState<'quick' | 'photo'>('quick');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -156,7 +158,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient, mode, visits, 
         photo_url: photo_url
       };
       console.log('Saving visit to database...');
-      await db.addVisit(visit, userId);
+      await db.addVisit(visit, userId, userProfile);
       console.log('Visit saved successfully');
       setShowAddVisit(false);
       setPhotoFile(null);
