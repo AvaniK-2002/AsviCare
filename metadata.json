@@ -1,0 +1,8 @@
+
+{
+  "name": "ClinicTrack - Doctor's Assistant",
+  "description": "A high-performance, mobile-first clinic management system for General Physicians and Gynecologists. Track patient visits, medical history, and clinic finances with ease.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
