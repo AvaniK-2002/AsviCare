@@ -41,20 +41,16 @@ const getUserId = async (): Promise<string | null> => {
 };
 
 export const db = {
-  createPatient: async (patient: Omit<Patient, 'id' | 'clinic_id' | 'created_by' | 'user_id' | 'created_at'>): Promise<Patient> => {
+  createPatient: async (patient: Omit<Patient, 'id' | 'clinic_id' | 'user_id' | 'created_at'>): Promise<Patient> => {
     const profile = await getUserProfile();
     if (!profile) throw new Error('User not authenticated');
-
-    const specialization = profile.role === 'gynecologist' ? 'gynecology' : 'general';
 
     const { data, error } = await supabase
       .from('patients')
       .insert({
         ...patient,
         clinic_id: profile.clinic_id,
-        created_by: profile.id,
         user_id: profile.auth_user_id,
-        specialization,
         created_at: new Date().toISOString()
       })
       .select()
@@ -159,9 +155,6 @@ export const db = {
       .from('visits')
       .select('*')
       .eq('user_id', userId);
-    if (profile?.clinic_id) {
-      query = query.eq('clinic_id', profile.clinic_id);
-    }
     if (mode) {
       query = query.eq('doctortype', mode);
     }
@@ -169,7 +162,7 @@ export const db = {
     if (error) throw error;
     return data || [];
   },
-  addVisit: async (visit: Omit<Visit, 'id' | 'created_at' | 'clinic_id' | 'created_by'>, userId: string) => {
+  addVisit: async (visit: Omit<Visit, 'id' | 'created_at' | 'created_by'>, userId: string) => {
     const profile = await getUserProfile();
     if (!profile) throw new Error('User not authenticated');
 
@@ -182,8 +175,6 @@ export const db = {
       .from('visits')
       .insert({
         ...visit,
-        clinic_id: profile.clinic_id,
-        created_by: profile.id,
         user_id: userId
       });
     if (error) {
@@ -207,9 +198,6 @@ export const db = {
     // Real-time subscription
     getUserProfile().then(profile => {
       let filter = `user_id=eq.${userId}`;
-      if (profile?.clinic_id) {
-        filter += `,clinic_id=eq.${profile.clinic_id}`;
-      }
       channel = supabase
         .channel(`visits_${userId}`)
         .on('postgres_changes', {
@@ -236,7 +224,7 @@ export const db = {
       )
     );
   },
-  createExpense: async (expense: Omit<Expense, 'id' | 'created_at' | 'clinic_id' | 'created_by'>, userId: string): Promise<Expense> => {
+  createExpense: async (expense: Omit<Expense, 'id' | 'created_at' | 'created_by'>, userId: string): Promise<Expense> => {
     const profile = await getUserProfile();
     if (!profile) throw new Error('User not authenticated');
 
@@ -244,8 +232,6 @@ export const db = {
       .from('expenses')
       .insert({
         ...expense,
-        clinic_id: profile.clinic_id,
-        created_by: profile.id,
         user_id: userId
       })
       .select()
@@ -259,9 +245,6 @@ export const db = {
       .from('expenses')
       .select('*')
       .eq('user_id', userId);
-    if (profile?.clinic_id) {
-      query = query.eq('clinic_id', profile.clinic_id);
-    }
     if (mode) {
       query = query.eq('doctortype', mode);
     }
@@ -294,9 +277,6 @@ export const db = {
     // Real-time subscription
     getUserProfile().then(profile => {
       let filter = `user_id=eq.${userId}`;
-      if (profile?.clinic_id) {
-        filter += `,clinic_id=eq.${profile.clinic_id}`;
-      }
       channel = supabase
         .channel(`expenses_${userId}`)
         .on('postgres_changes', {
@@ -635,7 +615,7 @@ export const db = {
     if (error) throw error;
     return data || [];
   },
-  createAppointment: async (appointment: Omit<Appointment, 'id' | 'created_at' | 'user_id' | 'clinic_id' | 'created_by'>, userId: string, mode?: DoctorMode): Promise<Appointment> => {
+  createAppointment: async (appointment: Omit<Appointment, 'id' | 'created_at' | 'user_id' | 'created_by'>, userId: string, mode?: DoctorMode): Promise<Appointment> => {
     const profile = await getUserProfile();
     if (!profile) throw new Error('User not authenticated');
 
@@ -643,9 +623,7 @@ export const db = {
       .from('appointments')
       .insert({
         ...appointment,
-        user_id: userId,
-        clinic_id: profile.clinic_id,
-        created_by: profile.id
+        user_id: userId
       })
       .select()
       .single();

@@ -4,7 +4,6 @@ export type DoctorMode = 'GP' | 'GYNO';
 export interface Patient {
   id: string;
   clinic_id: string;
-  created_by: string;
   user_id: string;
   name: string;
   phone: string;
@@ -25,8 +24,6 @@ export interface Patient {
 export interface Visit {
   id: string;
   patient_id: string;
-  clinic_id: string;
-  created_by: string;
   doctortype: DoctorMode;
   note: string;
   fee: number;
@@ -37,8 +34,6 @@ export interface Visit {
 
 export interface Expense {
   id: string;
-  clinic_id: string;
-  created_by: string;
   amount: number;
   category: string;
   note: string;
@@ -57,8 +52,6 @@ export interface ClinicStats {
 export interface Appointment {
   id: string;
   patient_id: string;
-  clinic_id: string;
-  created_by: string;
   doctortype: DoctorMode;
   assigned_to?: string; // User ID of assigned doctor/receptionist
   start_time: string;
