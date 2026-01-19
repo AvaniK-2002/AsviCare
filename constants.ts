@@ -2,7 +2,7 @@
 export const EXPENSE_CATEGORIES = [
   'Rent',
   'Medicine Supply',
-  'Staff Salary',
+  'Travel',
   'Utilities',
   'Equipment',
   'Marketing',

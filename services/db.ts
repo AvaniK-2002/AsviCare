@@ -119,36 +119,7 @@ export const db = {
       });
     if (error) throw error;
   },
-  onPatientsChange: (callback: (patients: Patient[]) => void, userId: string, mode?: DoctorMode) => {
-    let channel: any;
-    // Initial fetch
-    db.getPatients(userId, mode).then(callback).catch(() => callback([]));
-    // For real-time, set up subscription
-    getUserProfile().then(profile => {
-      if (profile) {
-        let filter = `user_id=eq.${userId}`;
-        if (profile.clinic_id) {
-          filter += `,clinic_id=eq.${profile.clinic_id}`;
-        }
-        channel = supabase
-          .channel(`patients_${userId}`)
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'patients',
-            filter
-          }, () => {
-            db.getPatients(userId, mode).then(callback).catch(() => callback([]));
-          })
-          .subscribe();
-      }
-    });
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  },
+
   getVisits: async (userId: string, mode?: DoctorMode): Promise<Visit[]> => {
     const profile = await getUserProfile();
     let query = supabase
@@ -191,31 +162,7 @@ export const db = {
       .eq('user_id', userId);
     if (error) throw error;
   },
-  onVisitsChange: (callback: (visits: Visit[]) => void, userId: string, mode?: DoctorMode) => {
-    let channel: any;
-    // Initial fetch
-    db.getVisits(userId, mode).then(callback).catch(() => callback([]));
-    // Real-time subscription
-    getUserProfile().then(profile => {
-      let filter = `user_id=eq.${userId}`;
-      channel = supabase
-        .channel(`visits_${userId}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'visits',
-          filter
-        }, () => {
-          db.getVisits(userId, mode).then(callback).catch(() => callback([]));
-        })
-        .subscribe();
-    });
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  },
+
 
   getPatientVisits: (patient_id: string, userId: string): Promise<Visit[]> => {
     return db.getVisits(userId).then(visits =>
@@ -271,30 +218,7 @@ export const db = {
       .eq('user_id', userId);
     if (error) throw error;
   },
-  onExpensesChange: (callback: (expenses: Expense[]) => void, userId: string, mode?: DoctorMode) => {
-    let channel: any;
-    db.getExpenses(userId, mode).then(callback).catch(() => callback([]));
-    // Real-time subscription
-    getUserProfile().then(profile => {
-      let filter = `user_id=eq.${userId}`;
-      channel = supabase
-        .channel(`expenses_${userId}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'expenses',
-          filter
-        }, () => {
-          db.getExpenses(userId, mode).then(callback).catch(() => callback([]));
-        })
-        .subscribe();
-    });
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  },
+
   uploadPrescriptionImage: async (file: File, patient_id: string, userId: string): Promise<string> => {
     console.log('uploadPrescriptionImage called with file:', file.name, 'size:', file.size, 'patient_id:', patient_id, 'userId:', userId);
     if (!supabase) {
@@ -649,26 +573,5 @@ export const db = {
       .eq('user_id', userId);
     if (error) throw error;
   },
-  onAppointmentsChange: (callback: (appointments: Appointment[]) => void, userId: string, mode?: DoctorMode) => {
-    let channel: any;
-    db.getAppointments(userId, mode).then(callback).catch(() => callback([]));
-    let filter = `user_id=eq.${userId}`;
-    // Note: Appointments filter does not include doctortype
-    channel = supabase
-      .channel(`appointments_${userId}_${mode || 'all'}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'appointments',
-        filter
-      }, () => {
-        db.getAppointments(userId, mode).then(callback).catch(() => callback([]));
-      })
-      .subscribe();
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }
+
 };

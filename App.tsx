@@ -90,17 +90,6 @@ const AppContent: React.FC = () => {
       }
     };
     fetchData();
-
-    // Set up subscriptions
-    const unsubPatients = db.onPatientsChange((pats) => setPatients(pats), userId, doctorMode);
-    const unsubExpenses = db.onExpensesChange((exps) => setExpenses(exps), userId, doctorMode);
-    const unsubVisits = db.onVisitsChange((vists) => setVisits(vists), userId, doctorMode);
-
-    return () => {
-      unsubPatients();
-      unsubExpenses();
-      unsubVisits();
-    };
   }, [user, userId, doctorMode]);
 
   // Compute dashboard stats
@@ -125,6 +114,16 @@ const AppContent: React.FC = () => {
       patientCount
     };
   }, [visits, expenses, patients]);
+
+  const refreshExpenses = async () => {
+    if (!userId) return;
+    try {
+      const exps = await db.getExpenses(userId, doctorMode);
+      setExpenses(exps);
+    } catch (error) {
+      console.error('Failed to refresh expenses:', error);
+    }
+  };
 
   const recentPatients = useMemo(() => patients.slice(-3), [patients]);
   const recentActivity = useMemo(() => visits.slice(-3), [visits]);
@@ -270,6 +269,7 @@ const AppContent: React.FC = () => {
     try {
       await db.updatePatient(updated.id, updated, userId!);
       setSelectedPatient(updated);
+      setPatients(prev => prev.map(p => p.id === updated.id ? updated : p));
       toast.success('Patient updated successfully!');
     } catch (error: any) {
       toast.error('Failed to update patient: ' + error.message);
@@ -525,7 +525,7 @@ const AppContent: React.FC = () => {
             />
           )}
           {activeTab === 'appointments' && <Appointments mode={doctorMode} />}
-          {activeTab === 'expenses' && <Expenses mode={doctorMode} expenses={expenses} />}
+          {activeTab === 'expenses' && <Expenses mode={doctorMode} expenses={expenses} onRefreshExpenses={refreshExpenses} />}
           {activeTab === 'reports' && <Reports mode={doctorMode} patients={patients} visits={visits} expenses={expenses} />}
         </>
       )}

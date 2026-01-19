@@ -11,9 +11,10 @@ import { useAuth } from '../components/AuthProvider';
 interface ExpensesProps {
   mode?: DoctorMode;
   expenses: Expense[];
+  onRefreshExpenses: () => Promise<void>;
 }
 
-const Expenses: React.FC<ExpensesProps> = ({ mode, expenses }) => {
+const Expenses: React.FC<ExpensesProps> = ({ mode, expenses, onRefreshExpenses }) => {
   const { userId, loading: authLoading } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -79,6 +80,7 @@ const Expenses: React.FC<ExpensesProps> = ({ mode, expenses }) => {
           doctortype: mode || 'GP'
         }, userId);
       }
+      await onRefreshExpenses();
       setShowForm(false);
       resetForm();
     } catch (err: any) {
@@ -110,6 +112,7 @@ const Expenses: React.FC<ExpensesProps> = ({ mode, expenses }) => {
     setError(null);
     try {
       await db.deleteExpense(id, userId);
+      await onRefreshExpenses();
     } catch (err: any) {
       setError(err.message || 'Failed to delete expense');
     }
