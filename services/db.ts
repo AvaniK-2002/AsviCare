@@ -5,10 +5,12 @@ import { getAuthService } from './authService';
 
 console.log('DB Service initialized with supabase:', !!supabase);
 
-
+// Cache for user profile to prevent multiple fetches
+let cachedProfile: { id: string; clinic_id: string; auth_user_id: string; role: string } | null = null;
 
 // Helper to get current user profile
 const getUserProfile = async (): Promise<{ id: string; clinic_id: string; auth_user_id: string; role: string } | null> => {
+  if (cachedProfile) return cachedProfile;
   if (!supabase) {
     console.log('getUserProfile: Supabase not configured');
     return null;
@@ -30,6 +32,7 @@ const getUserProfile = async (): Promise<{ id: string; clinic_id: string; auth_u
     console.log('getUserProfile: Profile not found:', error);
     return null;
   }
+  cachedProfile = data;
   console.log('getUserProfile: Returning profile:', data);
   return data;
 };
