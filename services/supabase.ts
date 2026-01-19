@@ -8,4 +8,6 @@ const isConfigured = supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('yo
 
 console.log('Initializing Supabase client with URL:', supabaseUrl, 'key length:', supabaseAnonKey?.length || 0, 'isConfigured:', isConfigured);
 
-export const supabase = isConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null;
+export const supabase = isConfigured ? createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: { params: { eventsPerSecond: 0 } }
+}) : null;
