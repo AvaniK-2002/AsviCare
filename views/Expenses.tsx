@@ -165,7 +165,7 @@ const Expenses: React.FC<ExpensesProps> = ({ mode, expenses, onRefreshExpenses }
             <button onClick={handleCancel} className="text-xs text-slate-400 font-bold p-1">Cancel</button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Amount (₹)</label>
               <input 
@@ -224,7 +224,7 @@ const Expenses: React.FC<ExpensesProps> = ({ mode, expenses, onRefreshExpenses }
       <div className="space-y-3">
         {filteredExpenses.length > 0 ? (
           filteredExpenses.map(exp => (
-            <div key={exp.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group transition-colors hover:bg-slate-50/50">
+            <div key={exp.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-4 md:justify-between group transition-colors hover:bg-slate-50/50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-slate-600 transition-colors">
                   <Receipt size={20} />

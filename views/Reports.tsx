@@ -125,7 +125,7 @@ const Reports: React.FC<ReportsProps> = ({ mode, patients, visits, expenses }) =
     <div className="space-y-6 pb-10">
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold text-slate-900">Financial Insights</h2>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex items-center gap-2">
             <Filter size={16} />
             <span className="text-sm font-medium">Date Range:</span>
@@ -159,7 +159,7 @@ const Reports: React.FC<ReportsProps> = ({ mode, patients, visits, expenses }) =
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Today's Income</p>
           <h3 className="text-2xl font-bold mt-1 text-green-600">₹{stats.todaysIncome.toLocaleString()}</h3>
@@ -227,8 +227,8 @@ const Reports: React.FC<ReportsProps> = ({ mode, patients, visits, expenses }) =
       <div className="grid grid-cols-1 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-4">Expense Breakdown</h3>
-          <div className="flex items-center">
-            <div className="h-[150px] w-1/2">
+          <div className="flex flex-col md:flex-row items-center">
+            <div className="h-[150px] w-full md:w-1/2">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -247,7 +247,7 @@ const Reports: React.FC<ReportsProps> = ({ mode, patients, visits, expenses }) =
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-1/2 space-y-2">
+            <div className="w-full md:w-1/2 space-y-2">
                {categoryData.map((entry, index) => (
                  <div key={entry.category} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
