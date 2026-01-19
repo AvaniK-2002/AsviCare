@@ -181,6 +181,14 @@ export const AppointmentSchema = z.object({
     .min(1, 'Patient is required')
     .uuid('Invalid patient ID'),
 
+  title: z.string()
+    .max(255, 'Title must be less than 255 characters')
+    .optional(),
+
+  doctortype: z.enum(['GP', 'GYNO'], {
+    message: 'Please select a valid doctor type'
+  }),
+
   start_time: z.string()
     .min(1, 'Start time is required')
     .refine(isValidDate, 'Please enter a valid start time')
@@ -190,16 +198,8 @@ export const AppointmentSchema = z.object({
     .min(1, 'End time is required')
     .refine(isValidDate, 'Please enter a valid end time'),
 
-  status: z.enum(['scheduled', 'completed', 'cancelled'], {
-    message: 'Please select a valid status'
-  }),
-
   notes: z.string()
     .max(1000, 'Notes must be less than 1000 characters')
-    .optional(),
-
-  assigned_to: z.string()
-    .uuid('Invalid user ID')
     .optional(),
 }).refine(data => new Date(data.end_time) > new Date(data.start_time), {
   message: 'End time must be after start time',

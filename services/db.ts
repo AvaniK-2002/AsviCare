@@ -1,5 +1,5 @@
 
-import { Patient, Visit, Expense, DoctorMode, Appointment } from '../types';
+import { Patient, Visit, Expense, DoctorMode, Appointment, CreateAppointmentForm } from '../types';
 import { supabase } from './supabase';
 import { getAuthService } from './authService';
 import { globalUserProfile } from '../components/UserProfileContext';
@@ -534,21 +534,38 @@ export const db = {
     // Note: Appointments are not filtered by doctortype as the column may not exist
     const { data, error } = await query.order('start_time');
     if (error) throw error;
-    return data || [];
+    return (data || []).map(a => ({ ...a, status: a.status || 'scheduled' }));
   },
-  createAppointment: async (appointment: Omit<Appointment, 'id' | 'created_at' | 'user_id' | 'created_by'>, userId: string, mode?: DoctorMode): Promise<Appointment> => {
-    const profile = await getUserProfile();
+  createAppointment: async (form: CreateAppointmentForm, userId: string, profile: { id: string; clinic_id: string; auth_user_id: string; role: string; doctortype: DoctorMode }, mode?: DoctorMode): Promise<Appointment> => {
     if (!profile) throw new Error('User not authenticated');
+    if (!userId) throw new Error('User ID is required');
+    if (!profile.doctortype) throw new Error('Doctor type is required');
+    if (!form.start_time) throw new Error('Start time is required');
+    if (!form.end_time) throw new Error('End time is required');
+
+    const payload = {
+      user_id: userId,
+      patient_id: form.patient_id || null,
+      title: form.title || null,
+      start_time: new Date(form.start_time).toISOString(),
+      end_time: new Date(form.end_time).toISOString(),
+      notes: form.notes || null,
+      doctortype: profile.doctortype
+    };
+
+    console.log("APPOINTMENT PAYLOAD:", payload);
 
     const { data, error } = await supabase
-      .from('appointments')
-      .insert({
-        ...appointment,
-        user_id: userId
-      })
+      .from("appointments")
+      .insert(payload)
       .select()
       .single();
-    if (error) throw error;
+
+    if (error) {
+      console.error("Supabase error:", error);
+      throw error;
+    }
+
     return data as Appointment;
   },
   updateAppointment: async (id: string, updates: Partial<Appointment>, userId: string, mode?: DoctorMode): Promise<Appointment> => {

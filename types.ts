@@ -51,14 +51,23 @@ export interface ClinicStats {
 
 export interface Appointment {
   id: string;
-  patient_id: string;
-  doctortype: DoctorMode;
-  assigned_to?: string; // User ID of assigned doctor/receptionist
+  user_id: string;
+  patient_id?: string;
+  title?: string;
   start_time: string;
   end_time: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
   notes?: string;
   created_at: string;
+  doctortype: DoctorMode;
+  status?: 'scheduled' | 'completed' | 'cancelled'; // Not in DB, for UI only
+}
+
+export interface CreateAppointmentForm {
+  patient_id?: string;
+  title?: string;
+  start_time: string | Date;
+  end_time: string | Date;
+  notes?: string;
 }
 
 export interface PrescriptionTemplate {
